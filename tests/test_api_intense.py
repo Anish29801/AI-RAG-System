@@ -149,13 +149,18 @@ class TestDocumentCRUD:
             assert d["file_type"] == "txt"
 
     def test_get_document_by_id(self, client):
-        if not hasattr(pytest, "uploaded_id") or not pytest.uploaded_id:
-            pytest.skip("No uploaded doc available")
-        r = client.get(f"/documents/{pytest.uploaded_id}")
+        # Upload own doc — autouse fixture cleans state between tests
+        r = client.post(
+            "/documents/upload",
+            files={"file": ("get_me.txt", b"Document for GET test.", "text/plain")},
+        )
+        assert r.status_code == 200
+        doc_id = r.json()["document_id"]
+        r = client.get(f"/documents/{doc_id}")
         assert r.status_code == 200
         data = r.json()
-        assert data["id"] == pytest.uploaded_id
-        assert data["filename"] == "test.txt"
+        assert data["id"] == doc_id
+        assert data["filename"] == "get_me.txt"
 
     def test_get_nonexistent_document_returns_404(self, client):
         r = client.get("/documents/nonexistent-id-12345")
@@ -169,13 +174,17 @@ class TestDocumentCRUD:
         assert "vector_chunks" in data or "documents_by_type" in data
 
     def test_delete_document(self, client):
-        if not hasattr(pytest, "uploaded_id") or not pytest.uploaded_id:
-            pytest.skip("No uploaded doc available")
-        r = client.delete(f"/documents/{pytest.uploaded_id}")
+        r = client.post(
+            "/documents/upload",
+            files={"file": ("delete_me.txt", b"Document for DELETE test.", "text/plain")},
+        )
+        assert r.status_code == 200
+        doc_id = r.json()["document_id"]
+        r = client.delete(f"/documents/{doc_id}")
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "deleted"
-        r2 = client.get(f"/documents/{pytest.uploaded_id}")
+        r2 = client.get(f"/documents/{doc_id}")
         assert r2.status_code == 404
 
     def test_delete_nonexistent_returns_404(self, client):

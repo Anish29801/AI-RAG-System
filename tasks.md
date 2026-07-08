@@ -8,13 +8,13 @@
 - [x] `tests/test_pipeline.py` — RAGPipeline with MockLLMClient, reranker tests, chunk→embed→store→retrieve round-trip ✅ 26/26
 
 ## Batch 3 — API (Integration — requires live server)
-- [x] `tests/test_api_intense.py` — Health, Admin, Document CRUD, Chat/RAG, Streaming, Error handling ✅ (28 tests, needs localhost:8000)
+- [x] `tests/test_api_intense.py` — Health, Admin, Document CRUD, Chat/RAG, Streaming, Error handling [28/28] (verified live on localhost:8000)
 
 ## Batch 4 — LLM (Unit + Integration — mocked httpx + live Ollama)
-- [x] `tests/test_llm.py` — LLMClient unit tests (mocked httpx) ✅ 13/13, LLMClient integration (live) ✅ 4 tests
+- [x] `tests/test_llm.py` — LLMClient unit tests (mocked httpx) [13/13], LLMClient integration (live) [4/4] (verified live on localhost:11434)
 
 ## Batch 5 — End-to-End (Full system — requires all services)
-- [x] `tests/test_e2e.py` — Golden path, session workflow, streaming, re-index, degraded recovery ✅ (22 tests, needs live server + Ollama)
+- [x] `tests/test_e2e.py` — Golden path, session workflow, streaming, re-index, degraded recovery [22/22] (verified live on localhost:8000 + Ollama)
 
 ## Batch 6 — Property/Fuzz (Hypothesis — no external deps)
 - [x] `tests/test_property.py` — Chunker invariants, FileStore invariants, PDS invariants, Chroma invariants, Fuzz inputs ✅ 38/38
