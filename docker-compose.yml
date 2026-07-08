@@ -1,0 +1,46 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ai-rag-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-rag-net
+
+  app:
+    build: .
+    container_name: ai-rag-app
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - RAG_OLLAMA_URL=http://ollama:11434
+      - RAG_HOST=0.0.0.0
+      - RAG_PORT=8000
+      - RAG_DEBUG=false
+      - RAG_EMBEDDING_MODEL=all-MiniLM-L6-v2
+    volumes:
+      - app_data:/app/data
+    networks:
+      - ai-rag-net
+
+volumes:
+  ollama_data:
+    name: ai-rag-ollama-data
+  app_data:
+    name: ai-rag-app-data
+
+networks:
+  ai-rag-net:
+    name: ai-rag-network

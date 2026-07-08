@@ -20,6 +20,8 @@ from backend.pds.repository import PDSRepository
 from backend.vector_store.chroma_client import ChromaStore
 from backend.core.llm_client import LLMClient
 from backend.routers import documents, chat, admin
+from backend.middleware.rate_limit import RateLimitMiddleware
+from backend.middleware.logging_config import setup_logging
 
 
 # ── Lifespan ──
@@ -66,6 +68,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+setup_logging(level="DEBUG" if settings.debug else "INFO")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -73,6 +77,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if not settings.debug:
+    app.add_middleware(RateLimitMiddleware, limit=100, interval_seconds=60)
 
 app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
