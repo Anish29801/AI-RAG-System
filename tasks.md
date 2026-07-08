@@ -21,5 +21,5 @@
 - [x] `tests/test_property.py` — Chunker invariants, FileStore invariants, PDS invariants, Chroma invariants, Fuzz inputs ✅ 38/38
 
 ## Deployment
-- [ ] Push all test files to GitHub
-- [ ] Deploy frontend via @Agni (Netlify)
+- [x] Push all test files to GitHub ✅ (Anish29801/AI-RAG-System)
+- [x] Deploy frontend via @Agni (Netlify) — N/A (no frontend exists; pure backend Python/FastAPI project)
