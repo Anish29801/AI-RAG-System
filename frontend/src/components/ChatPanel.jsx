@@ -6,11 +6,16 @@ export default function ChatPanel({
   onRenameSession, onDeleteSession,
 }) {
   const [input, setInput] = useState('');
+  const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const editRef = useRef(null);
+
+  const filteredSessions = search
+    ? sessions.filter((s) => s.title.toLowerCase().includes(search.toLowerCase()))
+    : sessions;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -55,11 +60,23 @@ export default function ChatPanel({
         <button className="btn btn-primary btn-sm" onClick={onNewSession}>
           + New Chat
         </button>
+        <div className="session-search-wrapper">
+          <svg className="session-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            className="session-search-input"
+            placeholder="Search sessions..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <div className="session-list">
-          {sessions.length === 0 && (
-            <div className="session-list-empty">No sessions yet</div>
+          {filteredSessions.length === 0 && (
+            <div className="session-list-empty">{search ? 'No matching sessions' : 'No sessions yet'}</div>
           )}
-          {sessions.map((s) => (
+          {filteredSessions.map((s) => (
             <div
               key={s.id}
               className={`session-item${s.id === activeSessionId ? ' active' : ''}`}

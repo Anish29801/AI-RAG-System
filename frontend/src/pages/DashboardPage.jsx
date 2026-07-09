@@ -26,6 +26,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [history, setHistory] = useState([]);
+  const [presets, setPresets] = useState([]);
+  const [presetName, setPresetName] = useState('');
+  const [showPresetInput, setShowPresetInput] = useState(false);
 
   const showToast = (msg, err = false) => {
     setToast({ msg, err });
@@ -41,11 +44,12 @@ export default function DashboardPage() {
   async function loadAll() {
     setLoading(true);
     try {
-      const [s, m, st, h] = await Promise.all([
+      const [s, m, st, h, p] = await Promise.all([
         get('/api/admin/llm-settings'),
         get('/api/admin/llm-models'),
         get('/api/admin/stats'),
         get('/api/admin/llm-history?limit=50'),
+        get('/api/admin/presets'),
       ]);
       setSettings(s);
       setStats(st);
@@ -55,6 +59,7 @@ export default function DashboardPage() {
       setCurrentModel(s.model);
       setModels(m.models || []);
       setHistory(h.entries || []);
+      setPresets(p.presets || []);
     } catch (e) {
       console.error('Failed to load:', e);
       showToast('Failed to load dashboard data', true);
@@ -67,6 +72,44 @@ export default function DashboardPage() {
       const st = await get('/api/admin/stats');
       setStats(st);
     } catch { /* ignore */ }
+  }
+
+  async function handleSavePreset() {
+    if (!presetName.trim()) return;
+    try {
+      const body = { name: presetName.trim(), settings: { model: currentModel, temperature: Math.round(tempVal * 100) / 100, top_p: Math.round(topPVal * 100) / 100, top_k: Math.round(topKVal) } };
+      await fetch('/api/admin/presets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const p = await get('/api/admin/presets');
+      setPresets(p.presets || []);
+      setPresetName('');
+      setShowPresetInput(false);
+      showToast('Preset saved');
+    } catch { showToast('Failed to save preset', true); }
+  }
+
+  async function handleApplyPreset(name) {
+    try {
+      const result = await fetch(`/api/admin/presets/${encodeURIComponent(name)}/apply`, { method: 'POST' });
+      const data = await result.json();
+      setSettings(data);
+      setTempVal(data.temperature);
+      setTopPVal(data.top_p);
+      setTopKVal(data.top_k);
+      setCurrentModel(data.model);
+      showToast(`Preset "${name}" applied`);
+      const h = await get('/api/admin/llm-history?limit=50');
+      setHistory(h.entries || []);
+    } catch { showToast('Failed to apply preset', true); }
+  }
+
+  async function handleDeletePreset(name) {
+    if (!confirm(`Delete preset "${name}"?`)) return;
+    try {
+      await fetch(`/api/admin/presets/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      const p = await get('/api/admin/presets');
+      setPresets(p.presets || []);
+      showToast('Preset deleted');
+    } catch { showToast('Failed to delete preset', true); }
   }
 
   const handleSave = useCallback(async () => {
@@ -359,6 +402,56 @@ export default function DashboardPage() {
           <button className="btn btn-secondary" onClick={loadAll}>
             Refresh All
           </button>
+
+          {/* Presets */}
+          <div className="presets-group">
+            <select
+              className="preset-select"
+              value=""
+              onChange={(e) => { if (e.target.value) handleApplyPreset(e.target.value); }}
+            >
+              <option value="">Load Preset</option>
+              {presets.map((p) => (
+                <option key={p.name} value={p.name}>{p.name}</option>
+              ))}
+            </select>
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowPresetInput(true)}>
+              Save Preset
+            </button>
+            {presets.length > 0 && (
+              <select
+                className="preset-select preset-delete"
+                value=""
+                onChange={(e) => { if (e.target.value) handleDeletePreset(e.target.value); }}
+              >
+                <option value="">Delete Preset</option>
+                {presets.map((p) => (
+                  <option key={p.name} value={p.name}>{p.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {showPresetInput && (
+            <div className="preset-input-overlay">
+              <div className="preset-input-dialog">
+                <h4>Save Preset</h4>
+                <input
+                  className="preset-name-input"
+                  placeholder="Preset name..."
+                  value={presetName}
+                  onChange={(e) => setPresetName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSavePreset(); if (e.key === 'Escape') setShowPresetInput(false); }}
+                  autoFocus
+                />
+                <div className="preset-input-actions">
+                  <button className="btn btn-primary btn-sm" onClick={handleSavePreset}>Save</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setShowPresetInput(false)}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {llmAvailable && (
             <span className="llm-status-badge">
               <span className="dot healthy" /> LLM Online

@@ -29,16 +29,18 @@ _llm: Optional[LLMClient] = None
 _vector: Optional[ChromaStore] = None
 _settings_store: Optional = None
 _history_store: Optional = None
+_preset_store: Optional = None
 _start_time: float = 0.0
 
 
-def init_deps(pds, llm, vector, settings_store=None, history_store=None):
-    global _pds, _llm, _vector, _settings_store, _history_store, _start_time
+def init_deps(pds, llm, vector, settings_store=None, history_store=None, preset_store=None):
+    global _pds, _llm, _vector, _settings_store, _history_store, _preset_store, _start_time
     _pds = pds
     _llm = llm
     _vector = vector
     _settings_store = settings_store
     _history_store = history_store
+    _preset_store = preset_store
     _start_time = time.time()
 
 
@@ -180,6 +182,55 @@ async def get_llm_history(limit: int = 50):
     for e in entries:
         e["time"] = datetime.fromtimestamp(e["timestamp"]).strftime("%H:%M:%S")
     return {"entries": entries}
+
+
+# ── Presets ──
+
+
+class PresetCreate(BaseModel):
+    name: str
+    settings: dict
+
+
+@router.get("/presets")
+async def list_presets():
+    if not _preset_store:
+        raise HTTPException(503, "Preset store not initialised")
+    return {"presets": _preset_store.list()}
+
+
+@router.post("/presets")
+async def create_preset(body: PresetCreate):
+    if not _preset_store or not _llm:
+        raise HTTPException(503, "System not initialised")
+    _preset_store.save(body.name, body.settings)
+    return {"status": "created", "name": body.name}
+
+
+@router.post("/presets/{name}/apply")
+async def apply_preset(name: str):
+    if not _preset_store or not _llm:
+        raise HTTPException(503, "System not initialised")
+    preset = _preset_store.get(name)
+    if not preset:
+        raise HTTPException(404, "Preset not found")
+    _llm.update_settings(**preset)
+    current = _llm.get_settings()
+    if _settings_store:
+        _settings_store.save(current)
+    if _history_store:
+        _history_store.record(**{k: current[k] for k in ("temperature", "top_p", "top_k", "model")})
+    return current
+
+
+@router.delete("/presets/{name}")
+async def delete_preset(name: str):
+    if not _preset_store:
+        raise HTTPException(503, "Preset store not initialised")
+    ok = _preset_store.delete(name)
+    if not ok:
+        raise HTTPException(404, "Preset not found")
+    return {"status": "deleted", "name": name}
 
 
 def _get_memory_info() -> dict:

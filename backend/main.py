@@ -22,7 +22,7 @@ from backend.core.llm_client import LLMClient
 from backend.routers import documents, chat, admin
 from backend.middleware.rate_limit import RateLimitMiddleware
 from backend.middleware.logging_config import setup_logging
-from backend.pds.settings_store import SettingsStore, HistoryStore
+from backend.pds.settings_store import SettingsStore, HistoryStore, PresetStore
 
 
 # ── Lifespan ──
@@ -43,6 +43,7 @@ async def lifespan(app: FastAPI):
     # Persistent stores for LLM settings
     settings_store = SettingsStore("./data/llm_settings.json")
     history_store = HistoryStore("./data/param_history.json")
+    preset_store = PresetStore("./data/llm_presets.json")
 
     saved = settings_store.load()
     llm = LLMClient(
@@ -56,7 +57,7 @@ async def lifespan(app: FastAPI):
     # Inject dependencies into routers
     documents.init_deps(pds, vector)
     chat.init_deps(pds, llm, vector)
-    admin.init_deps(pds, llm, vector, settings_store, history_store)
+    admin.init_deps(pds, llm, vector, settings_store, history_store, preset_store)
 
     yield
 

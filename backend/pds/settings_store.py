@@ -89,3 +89,42 @@ class HistoryStore:
 
     def clear(self):
         self._write([])
+
+
+class PresetStore:
+    """Manages named LLM setting presets saved to a JSON file."""
+
+    def __init__(self, file_path: str = "./data/llm_presets.json"):
+        self.file_path = Path(file_path)
+        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def _read(self) -> dict:
+        if self.file_path.exists():
+            try:
+                return json.loads(self.file_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                pass
+        return {}
+
+    def _write(self, presets: dict):
+        self.file_path.write_text(json.dumps(presets, indent=2, default=str), encoding="utf-8")
+
+    def list(self) -> list[dict]:
+        presets = self._read()
+        return [{"name": k, **v} for k, v in presets.items()]
+
+    def get(self, name: str) -> dict | None:
+        return self._read().get(name)
+
+    def save(self, name: str, settings: dict):
+        presets = self._read()
+        presets[name] = {k: v for k, v in settings.items() if k in ("model", "temperature", "top_p", "top_k")}
+        self._write(presets)
+
+    def delete(self, name: str) -> bool:
+        presets = self._read()
+        if name not in presets:
+            return False
+        del presets[name]
+        self._write(presets)
+        return True
