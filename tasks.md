@@ -1,24 +1,21 @@
-# Tasks — AI RAG System Testing
+# Tasks — AI RAG System
 
-## Batch 1 — Foundation (Unit tests — no external deps)
-- [x] `tests/conftest.py` — Shared fixtures (temp_dir, file_store, chroma_store, pds_repo, mock_llm, chunker, embedder)
-- [x] `tests/test_foundation.py` — Config, PDS Models (ORM), FileStore, Chunker (all strategies), ChromaStore (mocked), Embedder ✅ 106/106
+## Batch 1 — Backend Data & Persistence
+- [ ] Backend: Settings persistence — save LLM config to JSON file (survives restarts)
+- [ ] Backend: Param history endpoint — track settings changes with timestamps
+- [ ] Backend: Enhanced `/api/admin/stats` — docs, vectors, uptime, model health in detail
 
-## Batch 2 — Pipeline (Integration — mocked LLM + real ChromaDB)
-- [x] `tests/test_pipeline.py` — RAGPipeline with MockLLMClient, reranker tests, chunk→embed→store→retrieve round-trip ✅ 26/26
+## Batch 2 — Frontend Polish & Live Data
+- [ ] Frontend: Dashboard — live stats from backend, real param history (replace mock)
+- [ ] Frontend: Animations + loading skeletons + error boundaries
+- [ ] Frontend: Session management — rename/delete sessions
 
-## Batch 3 — API (Integration — requires live server)
-- [x] `tests/test_api_intense.py` — Health, Admin, Document CRUD, Chat/RAG, Streaming, Error handling [28/28] (verified live on localhost:8000)
+## Batch 3 — UX Features
+- [ ] Frontend: Conversation search in session sidebar
+- [ ] Frontend: LLM preset configurations (save/load presets)
+- [ ] Backend: Preset CRUD endpoints
 
-## Batch 4 — LLM (Unit + Integration — mocked httpx + live Ollama)
-- [x] `tests/test_llm.py` — LLMClient unit tests (mocked httpx) [13/13], LLMClient integration (live) [4/4] (verified live on localhost:11434)
-
-## Batch 5 — End-to-End (Full system — requires all services)
-- [x] `tests/test_e2e.py` — Golden path, session workflow, streaming, re-index, degraded recovery [22/22] (verified live on localhost:8000 + Ollama)
-
-## Batch 6 — Property/Fuzz (Hypothesis — no external deps)
-- [x] `tests/test_property.py` — Chunker invariants, FileStore invariants, PDS invariants, Chroma invariants, Fuzz inputs ✅ 38/38
-
-## Deployment
-- [x] Push all test files to GitHub ✅ (Anish29801/AI-RAG-System)
-- [x] Deploy frontend via @Agni (Netlify) — N/A (no frontend exists; pure backend Python/FastAPI project)
+## Quality Gates
+- [ ] All tests pass after each batch
+- [ ] Frontend build verified
+- [ ] Commit + push after each batch

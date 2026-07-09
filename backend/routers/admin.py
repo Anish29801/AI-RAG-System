@@ -10,6 +10,7 @@
 
 import os
 import time
+from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -26,14 +27,18 @@ router = APIRouter()
 _pds: Optional[PDSRepository] = None
 _llm: Optional[LLMClient] = None
 _vector: Optional[ChromaStore] = None
+_settings_store: Optional = None
+_history_store: Optional = None
 _start_time: float = 0.0
 
 
-def init_deps(pds: PDSRepository, llm: LLMClient, vector: ChromaStore):
-    global _pds, _llm, _vector, _start_time
+def init_deps(pds, llm, vector, settings_store=None, history_store=None):
+    global _pds, _llm, _vector, _settings_store, _history_store, _start_time
     _pds = pds
     _llm = llm
     _vector = vector
+    _settings_store = settings_store
+    _history_store = history_store
     _start_time = time.time()
 
 
@@ -65,9 +70,15 @@ async def system_stats():
     pds_stats = await _pds.get_document_stats()
     vector_stats = _vector.get_stats()
     uptime = time.time() - _start_time
+    llm_settings = _llm.get_settings() if _llm else {}
+    llm_ok = await _llm.is_available() if _llm else False
 
     return {
         "uptime_seconds": round(uptime),
+        "llm": {
+            "available": llm_ok,
+            **llm_settings,
+        },
         "documents": pds_stats,
         "vectors": vector_stats,
         "memory": _get_memory_info(),
@@ -140,7 +151,17 @@ async def update_llm_settings(body: LLMSettingsUpdate):
     if not _llm:
         raise HTTPException(503, "System not initialised")
     _llm.update_settings(**body.model_dump(exclude_none=True))
-    return _llm.get_settings()
+    current = _llm.get_settings()
+    if _settings_store:
+        _settings_store.save(current)
+    if _history_store:
+        _history_store.record(
+            temperature=current["temperature"],
+            top_p=current["top_p"],
+            top_k=current["top_k"],
+            model=current["model"],
+        )
+    return current
 
 
 @router.get("/llm-models")
@@ -149,6 +170,16 @@ async def list_llm_models():
         raise HTTPException(503, "System not initialised")
     models = await _llm.list_models()
     return {"models": models, "current": _llm.model}
+
+
+@router.get("/llm-history")
+async def get_llm_history(limit: int = 50):
+    if not _history_store:
+        raise HTTPException(503, "History store not initialised")
+    entries = _history_store.get_history(limit=limit)
+    for e in entries:
+        e["time"] = datetime.fromtimestamp(e["timestamp"]).strftime("%H:%M:%S")
+    return {"entries": entries}
 
 
 def _get_memory_info() -> dict:

@@ -55,6 +55,33 @@ export default function ChatPage({ health }) {
     }
   }
 
+  async function handleRenameSession(id, title) {
+    try {
+      await fetch(`/api/chat/sessions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+      await loadSessions();
+    } catch (e) {
+      console.error('Failed to rename session:', e);
+    }
+  }
+
+  async function handleDeleteSession(id) {
+    if (!confirm('Delete this session and all its messages?')) return;
+    try {
+      await del(`/api/chat/sessions/${id}`);
+      if (activeSessionId === id) {
+        setActiveSessionId(null);
+        setMessages([]);
+      }
+      await loadSessions();
+    } catch (e) {
+      console.error('Failed to delete session:', e);
+    }
+  }
+
   async function handleUpload(file) {
     const formData = new FormData();
     formData.append('file', file);
@@ -181,6 +208,8 @@ export default function ChatPage({ health }) {
           onSelectSession={switchSession}
           onNewSession={handleNewSession}
           onSend={handleSend}
+          onRenameSession={handleRenameSession}
+          onDeleteSession={handleDeleteSession}
         />
       </div>
     </div>

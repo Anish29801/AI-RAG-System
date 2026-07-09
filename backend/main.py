@@ -22,6 +22,7 @@ from backend.core.llm_client import LLMClient
 from backend.routers import documents, chat, admin
 from backend.middleware.rate_limit import RateLimitMiddleware
 from backend.middleware.logging_config import setup_logging
+from backend.pds.settings_store import SettingsStore, HistoryStore
 
 
 # ── Lifespan ──
@@ -39,22 +40,28 @@ async def lifespan(app: FastAPI):
         embedding_model=settings.embedding_model,
     )
 
+    # Persistent stores for LLM settings
+    settings_store = SettingsStore("./data/llm_settings.json")
+    history_store = HistoryStore("./data/param_history.json")
+
+    saved = settings_store.load()
     llm = LLMClient(
         base_url=settings.ollama_url,
-        model=settings.llm_model,
-        temperature=settings.temperature,
-        top_p=settings.top_p,
-        top_k=settings.llm_top_k,
+        model=saved.get("model", settings.llm_model),
+        temperature=saved.get("temperature", settings.temperature),
+        top_p=saved.get("top_p", settings.top_p),
+        top_k=saved.get("top_k", settings.llm_top_k),
     )
 
     # Inject dependencies into routers
     documents.init_deps(pds, vector)
     chat.init_deps(pds, llm, vector)
-    admin.init_deps(pds, llm, vector)
+    admin.init_deps(pds, llm, vector, settings_store, history_store)
 
     yield
 
-    # Shutdown
+    # Shutdown — persist current settings
+    settings_store.save(llm.get_settings())
     await pds.close()
     await llm.close()
 

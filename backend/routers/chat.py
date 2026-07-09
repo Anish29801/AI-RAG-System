@@ -196,6 +196,30 @@ async def list_sessions(limit: int = 20):
     ]
 
 
+class RenameSessionRequest(BaseModel):
+    title: str
+
+
+@router.patch("/sessions/{session_id}")
+async def rename_session(session_id: str, body: RenameSessionRequest):
+    if not _pds:
+        raise HTTPException(503, "System not initialised")
+    chat = await _pds.rename_session(session_id, body.title)
+    if not chat:
+        raise HTTPException(404, "Session not found")
+    return {"id": chat.id, "title": chat.title}
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(session_id: str):
+    if not _pds:
+        raise HTTPException(503, "System not initialised")
+    ok = await _pds.delete_session(session_id)
+    if not ok:
+        raise HTTPException(404, "Session not found")
+    return {"status": "deleted", "session_id": session_id}
+
+
 @router.get("/sessions/{session_id}/messages")
 async def get_session_messages(session_id: str):
     if not _pds:

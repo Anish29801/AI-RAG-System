@@ -199,6 +199,31 @@ class PDSRepository:
             )
             return list(result.scalars().all())
 
+    async def rename_session(self, session_id: str, title: str) -> ChatSession | None:
+        async with self._session() as session:
+            chat = await session.get(ChatSession, session_id)
+            if not chat:
+                return None
+            chat.title = title
+            chat.updated_at = _utcnow()
+            await session.commit()
+            await session.refresh(chat)
+            return chat
+
+    async def delete_session(self, session_id: str) -> bool:
+        async with self._session() as session:
+            chat = await session.get(ChatSession, session_id)
+            if not chat:
+                return False
+            msgs = await session.execute(
+                select(ChatMessage).where(ChatMessage.session_id == session_id)
+            )
+            for m in msgs.scalars().all():
+                await session.delete(m)
+            await session.delete(chat)
+            await session.commit()
+            return True
+
     # ── Teardown ──
 
     async def close(self):

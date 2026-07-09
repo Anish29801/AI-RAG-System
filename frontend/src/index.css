@@ -291,10 +291,125 @@ input[type="range"]::-moz-range-thumb {
   animation: slideUp 0.3s ease; z-index: 100;
   box-shadow: 0 4px 20px rgba(34,197,94,0.3);
 }
+.toast-error { background: #ef4444; box-shadow: 0 4px 20px rgba(239,68,68,0.3); }
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ════════════════════════════════════════
+   Animations & Transitions
+   ════════════════════════════════════════ */
+
+.dash-fade-in { animation: fadeIn 0.35s ease; }
+
+.settings-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.settings-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.stat-card {
+  transition: transform 0.2s ease;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ════════════════════════════════════════
+   Skeleton Loading
+   ════════════════════════════════════════ */
+
+.skeleton-title {
+  height: 28px; width: 240px; border-radius: 6px;
+  background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 24px;
+}
+.skeleton-card {
+  background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px; border: 1px solid #27272a;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ════════════════════════════════════════
+   Error States
+   ════════════════════════════════════════ */
+
+.error-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px;
+  padding: 80px 20px; text-align: center;
+  color: #a1a1aa; flex: 1;
+}
+.error-state svg { color: #ef4444; }
+.error-state h3 { font-size: 18px; font-weight: 600; color: #f4f4f5; }
+.error-state p { font-size: 14px; }
+
+/* ════════════════════════════════════════
+   Session Management
+   ════════════════════════════════════════ */
+
+.session-list {
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
+  max-height: calc(100vh - 180px); padding: 4px 0;
+}
+.session-list-empty {
+  padding: 20px 8px; text-align: center; color: #52525b; font-size: 12px;
+}
+.session-item {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  transition: background 0.12s; font-size: 13px;
+}
+.session-item:hover { background: #27272a; }
+.session-item.active { background: rgba(129,140,248,0.1); color: #818cf8; }
+.session-title {
+  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.session-actions {
+  display: flex; gap: 2px; opacity: 0;
+  transition: opacity 0.12s; flex-shrink: 0;
+}
+.session-item:hover .session-actions { opacity: 1; }
+.session-action-btn {
+  background: none; border: none; color: #71717a; cursor: pointer;
+  padding: 3px; border-radius: 4px; display: flex; align-items: center;
+  transition: color 0.12s, background 0.12s; line-height: 1;
+}
+.session-action-btn:hover { color: #e4e4e7; background: #3f3f46; }
+.session-action-btn.danger:hover { color: #ef4444; background: rgba(239,68,68,0.15); }
+.session-edit-input {
+  flex: 1; background: #18181b; border: 1px solid #818cf8; border-radius: 4px;
+  padding: 3px 6px; color: #e4e4e7; font-size: 12px; outline: none; min-width: 0;
+  font-family: 'Ubuntu', sans-serif;
+}
+
+/* ════════════════════════════════════════
+   Status / Badge
+   ════════════════════════════════════════ */
+
+.llm-status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #22c55e; font-weight: 500;
+  padding: 4px 12px; border-radius: 20px;
+  background: rgba(34,197,94,0.08); margin-left: auto;
+}
+.llm-status-badge.degraded { color: #f59e0b; background: rgba(245,158,11,0.08); }
+.status-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle;
+}
+.status-dot.healthy { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+.status-dot.degraded { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.4); }
 
 /* Responsive */
 @media (max-width: 768px) {
