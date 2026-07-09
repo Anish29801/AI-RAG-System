@@ -1,13 +1,17 @@
 """Admin and monitoring endpoints.
 
-- GET  /health      — full system health check
-- POST /reindex     — re-index all documents
-- GET  /stats       — comprehensive system stats
+- GET    /health          — full system health check
+- POST   /reindex         — re-index all documents
+- GET    /stats           — comprehensive system stats
+- GET    /llm-settings    — current LLM settings
+- PUT    /llm-settings    — update LLM settings
+- GET    /llm-models      — list available Ollama models
 """
 
 import os
 import time
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from typing import Optional
 
 from backend.pds.repository import PDSRepository
@@ -112,6 +116,39 @@ async def reindex_all():
             })
 
     return {"results": results}
+
+
+# ── LLM Settings ──
+
+
+class LLMSettingsUpdate(BaseModel):
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+
+
+@router.get("/llm-settings")
+async def get_llm_settings():
+    if not _llm:
+        raise HTTPException(503, "System not initialised")
+    return _llm.get_settings()
+
+
+@router.put("/llm-settings")
+async def update_llm_settings(body: LLMSettingsUpdate):
+    if not _llm:
+        raise HTTPException(503, "System not initialised")
+    _llm.update_settings(**body.model_dump(exclude_none=True))
+    return _llm.get_settings()
+
+
+@router.get("/llm-models")
+async def list_llm_models():
+    if not _llm:
+        raise HTTPException(503, "System not initialised")
+    models = await _llm.list_models()
+    return {"models": models, "current": _llm.model}
 
 
 def _get_memory_info() -> dict:

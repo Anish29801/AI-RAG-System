@@ -12,6 +12,8 @@ class AppConfig(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     llm_model: str = "llama3.1:8b"
     temperature: float = 0.1
+    top_p: float = 0.9
+    llm_top_k: int = 40
 
     # ── Vector Store ──
     embedding_model: str = "all-MiniLM-L6-v2"

@@ -39,6 +39,10 @@ export function post(path, body) {
   return request(path, { method: 'POST', body }).then((r) => r.json());
 }
 
+export function put(path, body) {
+  return request(path, { method: 'PUT', body }).then((r) => r.json());
+}
+
 export function postForm(path, formData) {
   return request(path, { method: 'POST', formData }).then((r) => r.json());
 }

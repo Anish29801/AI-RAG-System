@@ -43,6 +43,8 @@ async def lifespan(app: FastAPI):
         base_url=settings.ollama_url,
         model=settings.llm_model,
         temperature=settings.temperature,
+        top_p=settings.top_p,
+        top_k=settings.llm_top_k,
     )
 
     # Inject dependencies into routers

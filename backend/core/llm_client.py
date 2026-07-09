@@ -14,18 +14,22 @@ from backend.config import settings
 
 
 class LLMClient:
-    """Async client for Ollama LLM API."""
+    """Async client for Ollama LLM API with adjustable generation parameters."""
 
     def __init__(
         self,
         base_url: str = "",
         model: str = "",
         temperature: float = 0.1,
+        top_p: float = 0.9,
+        top_k: int = 40,
         timeout: float = 120.0,
     ):
         self.base_url = base_url or settings.ollama_url
         self.model = model or settings.llm_model
         self.temperature = temperature if temperature is not None else settings.temperature
+        self.top_p = top_p if top_p is not None else settings.top_p
+        self.top_k = top_k if top_k is not None else settings.llm_top_k
         self._client = httpx.AsyncClient(timeout=timeout)
 
     # ── Generation ──
@@ -44,7 +48,8 @@ class LLMClient:
             "stream": stream,
             "options": {
                 "temperature": self.temperature,
-                "top_p": 0.9,
+                "top_p": self.top_p,
+                "top_k": self.top_k,
                 "num_predict": 1024,
                 "keep_alive": -1,
             },
@@ -87,6 +92,8 @@ class LLMClient:
             "stream": stream,
             "options": {
                 "temperature": self.temperature,
+                "top_p": self.top_p,
+                "top_k": self.top_k,
                 "keep_alive": -1,
             },
         }
@@ -113,6 +120,40 @@ class LLMClient:
                 if line.strip():
                     data = json.loads(line)
                     yield data["message"]["content"]
+
+    # ── Settings ──
+
+    def get_settings(self) -> dict:
+        return {
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+        }
+
+    def update_settings(self, **kwargs):
+        valid = {"model", "temperature", "top_p", "top_k"}
+        for k, v in kwargs.items():
+            if k in valid and v is not None:
+                setattr(self, k, v)
+
+    # ── Models ──
+
+    async def list_models(self) -> list[dict]:
+        """Fetch available models from Ollama."""
+        try:
+            resp = await self._client.get(f"{self.base_url}/api/tags")
+            models = resp.json().get("models", [])
+            return [
+                {
+                    "name": m["name"],
+                    "size_bytes": m.get("size", 0),
+                    "modified_at": m.get("modified_at", ""),
+                }
+                for m in models
+            ]
+        except Exception:
+            return []
 
     # ── Health ──
 
